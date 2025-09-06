@@ -1,72 +1,114 @@
-Понял 👍 Давай переведу тестовое задание на русский простыми словами:
+
+
+````markdown
+# LinkedIn Recent Activity Scraper
+
+A Python-based CLI tool for scraping recent LinkedIn posts from public user profiles using Playwright and a headless Chromium browser.
 
 ---
 
-### Part A1 — **LinkedIn Posts Extractor (25 мин)**
+## ⚙️ Features
 
-#### Задача
-
-Нужно написать **Python CLI-скрипт**, который будет с помощью **Playwright**:
-
-* извлекать последние посты из указанного профиля LinkedIn,
-* работать безопасно и стабильно (как человек),
-* выдавать структурированный JSON, чтобы потом можно было использовать в автоматизации или анализе.
+- 🔒 Manual login flow using real browser session (storage persistence)
+- 🧠 Human-like scrolling with jitter & idle detection
+- 📥 Parses and saves recent activity (posts only) into structured JSON
+- 📝 Configurable output paths for logs and scraped data
+- ✅ Simple CLI interface via `typer`
 
 ---
 
-#### Вопросы и требования
+## 🚀 Quick Start
 
-**1. Управление сессией (Session Management):**
+### 1. Install dependencies
 
-* Как организовать логику так, чтобы **никогда не хранить логин/пароль**?
-* Использовать только сохранённое состояние сессии (storage state).
+```bash
+pip install -r requirements.txt
+````
 
-**2. Навигация по профилю и загрузка постов (Profile Navigation & Post Loading):**
+### 2. Login to LinkedIn
 
-* Перейти по профилю:
-  👉 `https://www.linkedin.com/in/juansebastianmd/`
-* Открыть раздел **"Recent activity → Posts" (Недавняя активность → Посты)**.
-* Скроллить вниз постепенно, подгружая посты.
-* Нужно загрузить хотя бы `--min-posts` постов.
-* Если за **60 секунд** посты не подгрузились — остановиться.
+Before scraping, you **must authenticate** to persist your session cookies.
 
-**3. Извлечение постов (Post Extraction):**
-Для каждого поста вытащить и нормализовать данные:
+```bash
+python -m main login
+```
 
-* `post_id`
-* `author_name` (имя автора)
-* `posted_at` (дату перевести из «2d ago» в ISO-8601)
-* `text` (текст поста)
-* `hashtags[]` (список хэштегов)
-* `links[]` (список ссылок в посте)
-* `reactions_count` (кол-во реакций)
-* `comments_count` (кол-во комментариев)
-
-⚠️ Нужно учесть, что какие-то данные могут отсутствовать. При этом логирование должно оставаться последовательным и понятным.
-
-**4. Генерация результата (Output Generation):**
-Сохранить результат в файл:
-👉 `out/li_posts.json`
-
-Файл должен содержать:
-
-* URL профиля,
-* время получения (ISO-8601),
-* общее число постов,
-* список постов в нужной структуре.
-
-**5. Наблюдаемость и логирование (Observability & Logging):**
-
-* Все ключевые события должны писаться в лог в формате JSON.
-* Лог-файл: 👉 `out/run.log`
-* Для событий использовать **event codes**.
-
-**6. Ограничение скорости (Rate Limiting):**
-
-* Все шаги автоматизации должны выполняться с задержками.
-* Использовать **явные ожидания** и **рандомную задержку 100–400 мс**.
-* В среднем — **одно действие в секунду** (чтобы выглядело как человек).
+This will open a browser window. Log in manually to your LinkedIn account — cookies will be saved to `out/storage.json`.
 
 ---
 
-Хочешь, я распишу сразу **структуру проекта и код-скелет** (CLI с аргументами, логирование, Playwright-сценарий), чтобы у тебя был готовый шаблон для тестового?
+### 3. Scrape recent posts
+
+Run the scraper with a full LinkedIn profile URL:
+
+```bash
+python -m main scrape https://www.linkedin.com/in/yurii-zholtov
+```
+
+> ✅ Parsed posts will be saved to `out/li_posts.json`
+> 📄 Logs will be written to `out/run.log`
+
+---
+
+## 🛠 Configuration
+
+Edit `src/session/config.py` to change default output paths:
+
+```python
+from pathlib import Path
+
+URL_FOR_LOGIN = "https://www.linkedin.com/login"
+
+FILE_FOR_RESULTS = Path("out/li_posts.json")  # <- Change this path if needed
+FILE_FOR_LOGS = Path("out/run.log")           # <- Log file output
+```
+
+---
+
+## 📁 Project Structure
+
+```
+src/
+├── cli/              # CLI entry points (Typer commands)
+├── loginflow/        # Manual login logic (Playwright session storage)
+├── parser/           # Helpers for formatting post data
+├── person/           # Main object representing a LinkedIn user
+├── scraper/          # Core scraping logic
+├── session/          # Storage, config, and session management
+├── out/              # Output files (results, logs, session cookies)
+└── main.py           # CLI runner for login / scrape
+```
+
+---
+
+## 🧪 Example Output
+
+Sample JSON result:
+
+```json
+[
+  {
+    "timestamp": "2025-09-06T14:32:45",
+    "content": "Excited to announce our new project in AI infrastructure...",
+    "likes": 123,
+    "comments": 45,
+    "url": "https://linkedin.com/posts/example"
+  },
+  ...
+]
+```
+
+---
+
+## 🧾 License
+
+MIT License. Educational & research use only. Respect LinkedIn’s Terms of Service.
+
+---
+
+## 🤖 Author
+
+Built with ❤️ by [Yurii Zholtov](https://www.linkedin.com/in/yurii-zholtov)
+Telegram: [@yuriy_akzy](https://t.me/yuriy_akzy)
+
+```
