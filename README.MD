@@ -1,7 +1,7 @@
 
 ---
 
-````markdown
+
 # LinkedIn Recent Activity Scraper
 
 A Python-based CLI tool for scraping recent LinkedIn posts from public user profiles using Playwright and a headless Chromium browser.
