@@ -9,7 +9,7 @@ from parser.comments import parse_counts
 from parser.dateformatter import normalize_posted_at
 from parser.hashtags import process_hashtags
 from person.person import Person
-from scraper.base import PipelineBuilder, ScrollerFactory
+from scraper.base import LinkedinTextAdapter, PipelineBuilder, ScrollerFactory
 from scraper.recent_activity.navigator import Navigator
 from scraper.recent_activity.schemas import PostSchema
 from scraper.recent_activity.scroller import RecentActivityScroller, scroll
@@ -28,30 +28,26 @@ class RecentActivityPipelineBuilder(PipelineBuilder):
         self.posts_count = posts_count
         return self
     
+    def set_text_adapter(self, text_adapter):
+        self.text_adapter = LinkedinTextAdapter(logger)
+    
     def build(self,*args, **kwargs):
-        return RecentActivityPipeline(self.person, self.navigator, self.posts, self.posts_count)
+        return RecentActivityPipeline(self.person, self.navigator, self.posts, self.posts_count, self.text_adapter)
 
 class RecentActivityPipeline:
 
-    def __init__(self, person, navigator, posts, posts_count) -> None:
+    def __init__(self, person, navigator, posts, posts_count, text_adapter) -> None:
         self.person : Person = person
         self._navigator = navigator
         self._posts: posts
         self._posts_count = posts_count
+        self._text_adapter : LinkedinTextAdapter = text_adapter
         logger.info("Pipeline created")
     
     def _safe_get(self, lst, idx, default=None):
         return lst[idx] if idx < len(lst) else default
     
-    async def _all_text_contents(self, lst: List):
-        out = []
-        for el in lst:
-            try:
-                out.append(await el.text_content())
-            except Exception as e:
-                logger.debug(f"text_content failed: {e}",)
-                out.append(None)
-        return out
+
     
     async def _get_posted_at(self, lst: List):
         if not lst:
@@ -65,14 +61,14 @@ class RecentActivityPipeline:
             return None
     
     async def _comments_count(self, lst: List):
-        texts = await self._all_text_contents(lst)
+        texts = await self._text_adapter.get_text(lst, 'lst')
         comments_text = self._safe_get(texts, 0)
         val = parse_counts([comments_text]).get('comments', 0) if comments_text else 0
         logger.debug("comments parsed")
         return val
 
     async def _reposts_count(self, lst: List):
-        texts = await self._all_text_contents(lst)
+        texts = await self._text_adapter.get_text(lst, "lst")
         reposts_text = self._safe_get(texts, 1)
         val = parse_counts([reposts_text]).get('reposts', 0) if reposts_text else 0
         logger.debug("reposts parsed")
@@ -139,28 +135,30 @@ class RecentActivityPipeline:
             for post in all_posts:
                 
                 post_id, texts_in_post, posted_at, hashtags_elements, links_elements, reposts_and_comments_count, author_of_commented_post, author_names = await self._fetch_mandatory_elements(page, post)
-                text = await self._all_text_contents(texts_in_post)                
+                text = await self._text_adapter.get_text(texts_in_post)                
                 posted_at = await self._get_posted_at(posted_at)
                 reposts_count = await self._reposts_count(reposts_and_comments_count)
                 comments_count = await self._comments_count(reposts_and_comments_count)
-                hashtags = await self._all_text_contents(hashtags_elements)
+                hashtags = await self._text_adapter.get_text(hashtags_elements, "lst")
                 hashtags = process_hashtags(hashtags)
                 hrefs_of_links = await self._get_only_links(links_elements)
-                author_name = await self._all_text_contents(author_names)
+                author_name = await self._text_adapter.get_text(author_names)
+                
                 if len(author_of_commented_post):
-                    author_of_commented_post = await self._all_text_contents(author_of_commented_post)
+                    author_of_commented_post = await self._text_adapter.get_text(author_of_commented_post)
                 else:
-                    author_of_commented_post = []
+                    author_of_commented_post = ""
+                
                 post_processed = PostSchema(
                     post_id=post_id,
-                    text=f"".join(text),
+                    text=text,
                     hashtags=hashtags,
                     posted_at=posted_at,
                     reposts_count=reposts_count,
                     comments_count=comments_count,
                     links=hrefs_of_links,
-                    author_name="".join(author_name),
-                    author_name_of_commented_content="".join(author_of_commented_post) 
+                    author_name=author_name,
+                    author_name_of_commented_content=author_of_commented_post
                 )
                 self._posts.append(post_processed)
                 logger.debug("post parsed")

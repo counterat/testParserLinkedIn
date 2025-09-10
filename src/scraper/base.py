@@ -1,11 +1,13 @@
 
-from playwright.async_api import Page
+from logging import Logger
+from typing import List
+from playwright.async_api import Locator, Page
 
 from person.person import Person
 from scraper.recent_activity.navigator import Navigator
 
 
-#Factory
+#Creational - Factory
 class Scroller:
     
     def __init__(self, page: Page) -> None:
@@ -25,7 +27,7 @@ class ScrollerFactory:
         return RecentActivityScroller(page)
         
 
-#Builder
+#Creational - Builder
 class PipelineBuilder:
     
     def __init__(self, person) -> None:
@@ -37,3 +39,22 @@ class PipelineBuilder:
     
     def build(self,*args, **kwargs):
         pass
+
+#Structural - Adapter 
+class LinkedinTextAdapter:
+    def __init__(self, logger: Logger) -> None:
+        self.logger = logger
+        
+    async def get_text(self, lst: List[Locator], response_type: "string" | "lst" = "string"):
+
+        out = "" if response_type == "string" else []
+        for el in lst:
+            try:
+                if response_type == "string":
+                    out += await el.text_content()
+                else:
+                    out.append(await el.text_content())
+            except Exception as e:
+                self.logger.debug(f"text_content failed: {e}",)
+        return out
+

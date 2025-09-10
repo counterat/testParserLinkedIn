@@ -17,5 +17,5 @@ class Person:
     
         if section == 'recent activity':
             builder = RecentActivityPipelineBuilder(self)
-            pipeline = builder.set_navigator(Navigator(self)).set_posts().set_posts_count().build()
+            pipeline = builder.set_navigator(Navigator(self)).set_posts().set_posts_count().set_text_adapter().build()
             await pipeline.scrape_section(max_posts=max_posts, timeout=timeout, min_posts=min_posts)
