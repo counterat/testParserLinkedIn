@@ -9,7 +9,7 @@ from scraper.recent_activity.selectors import SectionSelectors
 class RecentActivityScroller(Scroller):
 
     
-    async def _human_pause(kind: Literal["micro","step","slow"]="step"):
+    async def _human_pause(self, kind: Literal["micro","step","slow"]="step"):
         base = {"micro": 0.25, "step": 0.8, "slow": 1.2}[kind]
         jitter = random.uniform(0.10, 0.40)
         duration = base + jitter
