@@ -9,7 +9,7 @@ from parser.comments import parse_counts
 from parser.dateformatter import normalize_posted_at
 from parser.hashtags import process_hashtags
 from person.person import Person
-from scraper.base import PipelineBuilder
+from scraper.base import PipelineBuilder, ScrollerFactory
 from scraper.recent_activity.navigator import Navigator
 from scraper.recent_activity.schemas import PostSchema
 from scraper.recent_activity.scroller import RecentActivityScroller, scroll
@@ -133,7 +133,7 @@ class RecentActivityPipeline:
         try:
             section_url = self._navigator.get_url_for_section()
             await page.goto(section_url, wait_until="domcontentloaded")
-            scroller = RecentActivityScroller(page)
+            scroller = ScrollerFactory.create_recent_activity_scroller(page)
             self._posts_count = await scroller.scroll(page, max_posts=max_posts, timeout_seconds=timeout, min_posts=min_posts)
             all_posts = await page.locator(SectionSelectors.post_selector).all()
             for post in all_posts:

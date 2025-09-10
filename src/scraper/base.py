@@ -4,6 +4,7 @@ from playwright.async_api import Page
 from person.person import Person
 from scraper.recent_activity.navigator import Navigator
 
+
 #Factory
 class Scroller:
     
@@ -16,6 +17,14 @@ class Scroller:
     async def _human_pause(self, *args, **kwargs):
         pass
     
+class ScrollerFactory:
+    
+    @staticmethod
+    def create_recent_activity_scroller(page: Page):
+        from scraper.recent_activity.scroller import RecentActivityScroller
+        return RecentActivityScroller(page)
+        
+
 #Builder
 class PipelineBuilder:
     
