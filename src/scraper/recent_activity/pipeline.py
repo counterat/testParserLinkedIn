@@ -11,7 +11,7 @@ from parser.hashtags import process_hashtags
 from person.person import Person
 from scraper.recent_activity.navigator import Navigator
 from scraper.recent_activity.schemas import PostSchema
-from scraper.recent_activity.scroller import scroll
+from scraper.recent_activity.scroller import RecentActivityScroller, scroll
 from scraper.recent_activity.selectors import SectionSelectors
 from session.manager import open_with_storage
 
@@ -118,7 +118,8 @@ class Pipeline:
         try:
             section_url = self._navigator.get_url_for_section()
             await page.goto(section_url, wait_until="domcontentloaded")
-            self._posts_count = await scroll(page, max_posts=max_posts, timeout_seconds=timeout, min_posts=min_posts)
+            scroller = RecentActivityScroller(page)
+            self._posts_count = await scroller.scroll(page, max_posts=max_posts, timeout_seconds=timeout, min_posts=min_posts)
             all_posts = await page.locator(SectionSelectors.post_selector).all()
             for post in all_posts:
                 
