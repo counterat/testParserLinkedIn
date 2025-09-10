@@ -1,6 +1,8 @@
 
 
 
+
+
 class Person:
     
     
@@ -8,8 +10,12 @@ class Person:
         self.profile_url = profile_url
         
     async def parse_section(self, min_posts: int, max_posts: int, timeout: int, section = 'recent activity'):
-        from scraper.recent_activity.pipeline import Pipeline
+        from scraper.recent_activity.pipeline import RecentActivityPipelineBuilder
+        from scraper.recent_activity.navigator import Navigator
 
-        pipeline = Pipeline(self)
+
+    
         if section == 'recent activity':
+            builder = RecentActivityPipelineBuilder(self)
+            pipeline = builder.set_navigator(Navigator(self)).set_posts().set_posts_count().build()
             await pipeline.scrape_section(max_posts=max_posts, timeout=timeout, min_posts=min_posts)

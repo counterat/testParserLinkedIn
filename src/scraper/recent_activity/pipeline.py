@@ -9,6 +9,7 @@ from parser.comments import parse_counts
 from parser.dateformatter import normalize_posted_at
 from parser.hashtags import process_hashtags
 from person.person import Person
+from scraper.base import PipelineBuilder
 from scraper.recent_activity.navigator import Navigator
 from scraper.recent_activity.schemas import PostSchema
 from scraper.recent_activity.scroller import RecentActivityScroller, scroll
@@ -16,13 +17,27 @@ from scraper.recent_activity.selectors import SectionSelectors
 from session.manager import open_with_storage
 
 
-class Pipeline:
+#Builder
+class RecentActivityPipelineBuilder(PipelineBuilder):
+    
+    def set_posts(self, posts: List[PostSchema] = []):
+        self.posts = posts
+        return self
+    
+    def set_posts_count(self, posts_count = 0):
+        self.posts_count = posts_count
+        return self
+    
+    def build(self,*args, **kwargs):
+        return RecentActivityPipeline(self.person, self.navigator, self.posts, self.posts_count)
 
-    def __init__(self, person) -> None:
+class RecentActivityPipeline:
+
+    def __init__(self, person, navigator, posts, posts_count) -> None:
         self.person : Person = person
-        self._navigator = Navigator(person)
-        self._posts: List[PostSchema] = []
-        self._posts_count = 0
+        self._navigator = navigator
+        self._posts: posts
+        self._posts_count = posts_count
         logger.info("Pipeline created")
     
     def _safe_get(self, lst, idx, default=None):
